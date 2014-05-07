@@ -11,7 +11,7 @@ struct trie *trie_create(void);
 void trie_delete(struct trie *trie);
 
 int trie_insert(struct trie *trie, const char *string);
-int trie_search(struct trie *trie, const char *prefix, char *string, unsigned int size, struct trie *next_ptr);
+char *trie_search(struct trie *trie, const char *string, char *result, struct trie *next_ptr);
 
 #ifdef __cplusplus
 }
