@@ -3,12 +3,13 @@
 
 struct trie_node {
 	struct trie_node *childs[26];
+	struct trie_node *parent;
 	char leaf;
 };
 
 struct trie {
 	struct trie_node *root;
-	unsigned int string_count, node_size, leaf_size;
+	unsigned int string_count, node_count;
 	struct trie_search_box sbox;
 };
 
@@ -50,80 +51,94 @@ trie_delete(struct trie *trie) {
 int 
 trie_insert(struct trie *trie, const char *string) {
 	for (char chr = *string, struct trie_node *node = trie->root; chr != '\0'; string++) {
-		chr = tolower(chr) - 'a';
+		if (!isalpha(chr))
+			goto fail;
 
+		chr = tolower(chr) - 'a';
 		if (!node->childs[chr]) {
-			if (node->childs[chr] = _trie_node_create())
-				trie->node_count++;
-			else
-				/* notice, here don't delete parent node. hope to reuse when insert again. */
-				return -1;
+			if (!(node->childs[chr] = _trie_node_create()))
+				goto fail;
+			node->childs[chr]->parent = node;
+			trie->node_count++;
 		}
 		node = node->childs[chr];	
 	}
-	
-	if (!node->leaf)
-		trie->leaf_count++;
+	if (node == trie->root)
+		goto fail;
 	node->leaf = 1;
 	trie->string_count++;
 	return 0;
+fail:
+	/* notice, here don't delete parent node. hope to reuse when insert again. */
+	return -1;
 }
 
 struct trie_search_box {
 	const char *string, *origin;
-	struct trie_node *prefix_node, *node;
-	int child_index;
+	struct trie_node **match_node, **node;
 	unsigned int string_len;
 };
 
-static char * 
-_trie_search_recursion(struct trie *trie, const char *string, char *result, struct trie_node *node) {
-	char *origin = result;
-	int i;
+#define NODE_INDEX_OF(n) ((int) n - (int) (*n)->parent) / sizeof(struct trie_node *);
 
-	/* -1 mark need to check that current node is not leaf */
-	if (trie->sbox.child_index == -1) {
-		trie->sbox.child_index = 0;
-		if (node->leaf)
-			return origin;
-	}
-
+static struct trie_node ** 
+_trie_search_next(struct trie *trie) {
 	/* child */
-	result += trie->sbox.string_len;
-	for (i = trie->sbox.child_index; i < 26; i++) {
-		struct trie_node *child = node[i];
-
-		if (child) {
-			*result++ = i + 'a';
-			trie->sbox.child_index = -1;
-			return _trie_search_recursion(trie, string, result, child);		
+	for (i = 0; i < 26; i++) {
+		if (node->childs[i]) {
+			trie->sbox.node = &node->childs[i];
+			break;
 		}
 	}
-	return NULL;
+	/* right brother */
+	if (i == 26) {
+		int j = NODE_INDEX_OF(trie->sbox.node);
+
+		while () {
+			node = node->parent;
+			for (i = j+1; i < 26; i++) {
+				if (node->childs[i]) {
+					trie->sbox.node = node->childs[i];
+					break;
+				}
+			}
+		}
+	}
+	return origin;
 }
 
 char * 
 trie_search(struct trie *trie, const char *string, char *result, struct trie *next_ptr) {
-	if (trie) {
-		const char *origin = string;
+	struct trie_node **node;
+	char *origin;
 
-		for (struct trie_node *node = trie->root; *string; string++) {
+	if (trie) {
+		for (origin = (char *) string, node = &trie->root; *string; string++) {
 			if (!isalpha(*string))
 				goto fail;
-			node = node->childs[tolower(*string) - 'a'];
-			if (!node)
+			node = &node->childs[tolower(*string) - 'a'];
+			if (!(*node))
 				goto fail;
-			trie->sbox.prefix_node = trie->sbox.node = node;
+			trie->sbox.match_node = trie->sbox.node = node; 
 		}
 		trie->sbox.string_len = (unsigned int) (string - origin);
 		if (trie->sbox.string_len == 0)
 			goto fail;
-		trie->sbox.child_index = -1; 
 	} else
 		trie = next_ptr;
 
 	strcpy(result, string);
-	return _trie_search_recursion(trie, string, result);
+	origin = result;
+	result += trie->sbox.string_len - 1;
+loop:
+	/* end */
+	if ((node = trie->sbox.node)) {
+		trie->sbox.node = _trie_search_next(trie, &result);
+		*result++ = 'a' + NODE_INDEX_OF(node);
+		if ((*node)->leaf)
+			return origin;
+		goto loop;
+	}
 fail:
 	memset(&trie->sbox, 0, sizeof(struct trie_search_box));
 	return NULL;
