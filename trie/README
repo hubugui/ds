@@ -11,7 +11,9 @@ trie
 # 编译
 
 `git clone https://github.com/hubugui/ds.git`
+
 `cd ds/trie`
+
 `make`
 
 # 运行
@@ -23,11 +25,16 @@ trie
 返回
 
 `total string count=3`
+
 `total node count=6`
 
+
 `searching 'w':`
+
 `01:'wbk', len=3`
+
 `02:'wy', len=2`
+
 `03:'wzy', len=3`
 
 `3 results`
