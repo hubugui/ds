@@ -7,11 +7,14 @@ extern "C" {
 
 struct trie;
 
-struct trie *trie_create(void);
+struct trie *trie_new(void);
 void trie_delete(struct trie *trie);
 
 int trie_insert(struct trie *trie, const char *string);
-char *trie_search(struct trie *trie, const char *string, char *result, struct trie *next_ptr);
+char *trie_search(struct trie *trie, const char *string, char *result, unsigned int *result_size, struct trie *next_ptr);
+
+unsigned int trie_string_count(struct trie *trie);
+unsigned int trie_node_count(struct trie *trie);
 
 #ifdef __cplusplus
 }
