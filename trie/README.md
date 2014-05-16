@@ -38,3 +38,7 @@ trie
 `03:'wzy', len=3`
 
 `3 results`
+
+*其他例子*
+
+`./trie wy wbk wbkk wzg s sshc sgf sgfb sgfbk sgfk syb szhf sy`

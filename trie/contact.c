@@ -1,4 +1,5 @@
 #include <stdio.h>
+
 #include "trie.h"
 
 int
@@ -15,7 +16,7 @@ main(int argc, char **argv) {
 
     for (i = 1; i < argc - 1; i++) {
         if (trie_insert(t, argv[i])) {
-            printf("fail\n");
+            printf("trie_insert() fail\n");
             goto fail;
         }
     }
