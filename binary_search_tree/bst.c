@@ -5,12 +5,12 @@
 #include "bst.h"
 
 struct bst_node {
-	struct bst_node *left, *right;
-	int value;
+    struct bst_node *left, *right;
+    int value;
 };
 
 struct bst {
-	struct bst_node *root;
+    struct bst_node *root;
     unsigned int count;
 };
 
@@ -18,38 +18,38 @@ struct bst {
 
 static void 
 _bst_node_delete(struct bst_node *node) {
-	if (node->left)
-		_bst_node_delete(node->left);
-	if (node->right)
-		_bst_node_delete(node->right);
-	free(node);
+    if (node->left)
+        _bst_node_delete(node->left);
+    if (node->right)
+        _bst_node_delete(node->right);
+    free(node);
 }
 
 struct bst * 
 bst_new(void) {
-	return calloc(1, sizeof(struct bst));
+    return calloc(1, sizeof(struct bst));
 }
 
 void 
 bst_delete(struct bst *bst) {
-	if (bst->root)
-		_bst_node_delete(bst->root);
-	free(bst);
+    if (bst->root)
+        _bst_node_delete(bst->root);
+    free(bst);
 }
 
 static struct bst_node *  
 _bst_node_search(struct bst *bst, int value, struct bst_node ***parent) {
-	struct bst_node *node = bst->root;
+    struct bst_node *node = bst->root;
 
-	for (*parent = &bst->root; node; node = **parent) {
+    for (*parent = &bst->root; node; node = **parent) {
         if (value == node->value)
             return node;
-		if (value < node->value)
+        if (value < node->value)
             *parent = &node->left;
         else if (value > node->value)
             *parent = &node->right;
-	}
-	return NULL;
+    }
+    return NULL;
 }
 
 int 
@@ -60,18 +60,18 @@ bst_search(struct bst *bst, int value) {
 
 int 
 bst_insert(struct bst *bst, int value) {
-	struct bst_node *node = bst->root;
-	struct bst_node **parent = &bst->root;
+    struct bst_node *node = bst->root;
+    struct bst_node **parent = &bst->root;
 
-	while (node) {
-		if (value < node->value)
+    while (node) {
+        if (value < node->value)
             parent = &node->left;
-		else if (value > node->value)
+        else if (value > node->value)
             parent = &node->right;
         else
-    		return 0;
+            return 0;
         node = *parent;
-	}
+    }
 
     if ((*parent = _bst_node_new()))
         (*parent)->value = value;
@@ -118,26 +118,26 @@ bst_remove(struct bst *bst, int value) {
 
 int 
 bst_max(struct bst *bst) {
-	struct bst_node *node = bst->root;
+    struct bst_node *node = bst->root;
 
     if (node) {
     	while (node->right)
             node = node->right;
         return node->value;
     }
-	return 0;
+    return 0;
 }
 
 int 
 bst_min(struct bst *bst) {
-	struct bst_node *node = bst->root;
+    struct bst_node *node = bst->root;
 
     if (node) {
     	while (node->left)
             node = node->left;
         return node->value;
     }
-	return 0;
+    return 0;
 }
 
 static void 
@@ -152,5 +152,5 @@ _bst_node_dump(struct bst_node *node) {
 void 
 bst_dump(struct bst *bst) {
     printf("total %d nodes.\n\n", bst->count);
-	_bst_node_dump(bst->root);
+    _bst_node_dump(bst->root);
 }
