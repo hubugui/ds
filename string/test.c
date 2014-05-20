@@ -11,6 +11,9 @@ main(int argc, char **argv) {
     char *dst = string;
     char *src = &string[2];
     
+    printf("%d\n", sizeof(size_t));
+    printf("%d\n", sizeof(long long));
+
     strcpy(array, "12345678");
 
     _memmove(dst, src, 5);
