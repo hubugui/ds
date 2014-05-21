@@ -1,24 +1,16 @@
 #include <stdlib.h>
 #include "memmove.h"
 
-#if __WORDSIZE == 32
-#define word_int  int 
-#elif __WORDSIZE == 64
-#define word_int  long long int
-#else
-#error "unknown platform"
-#endif
-
 void * 
 _memmove(void *dst, const void *src, size_t size) {
     void *result = dst;
-    word_int *dst_w = (word_int *) dst;
-    word_int *src_w = (word_int *) src;
-    size_t quot = size / sizeof(void *); 
-    size_t remi = size % sizeof(void *);
+    size_t *dst_w = (size_t *) dst;
+    size_t *src_w = (size_t *) src;
+    size_t quot = size / sizeof(size_t); 
+    size_t remi = size % sizeof(size_t);
 
-    dst += quot * sizeof(void *);
-    src += quot * sizeof(void *);
+    dst += quot * sizeof(size_t);
+    src += quot * sizeof(size_t);
     if (dst_w <= src_w) {
         while (quot--) {
             *dst_w++ = *src_w++;
