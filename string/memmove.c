@@ -1,40 +1,42 @@
+#include <stdlib.h>
 #include "memmove.h"
 
-#define PLATFORM_BITS   (sizeof(void *) * 8)
-
-#if PLATFORM_BITS == 32
-#define word_size  int 
-#elif PLATFORM_BITS == 64
-#define word_size  long long int
+#if __WORDSIZE == 32
+#define word_int  int 
+#elif __WORDSIZE == 64
+#define word_int  long long int
 #else
 #error "unknown platform"
 #endif
 
 void * 
-_memmove(void *dst, const void *src, unsigned int size) {
+_memmove(void *dst, const void *src, size_t size) {
     void *result = dst;
-    word_size *dst_i = (word_size) dst;
-    word_size *src_i = (word_size) src;
+    word_int *dst_w = (word_int *) dst;
+    word_int *src_w = (word_int *) src;
     size_t quot = size / sizeof(void *); 
     size_t remi = size % sizeof(void *);
 
     dst += quot * sizeof(void *);
     src += quot * sizeof(void *);
-    if (dst_i <= src_i) {
-        while (quot) {
-            *dst_i++ = *src_i++;
-            quot--;
+    if (dst_w <= src_w) {
+        while (quot--) {
+            *dst_w++ = *src_w++;
         }
-        while (remi) {
-            *dst++ = *src++;
-            remi--;
+        while (remi--) {
+            *(char *) dst++ = *(char *) src++;
         }
     } else {
-        while (quot) {
-            dst[size-1] = src[size-1];
-            quot--;
+        dst += remi;
+        src += remi;
+        while (remi--) {
+            *(char *) --dst = *(char *) --src;
+        }
+        dst_w += quot; 
+        src_w += quot; 
+        while (quot--) {
+            *--dst_w = *--src_w;
         }
     }
-
     return result;
 }
