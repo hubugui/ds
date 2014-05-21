@@ -39,7 +39,7 @@ _test(const char *string, size_t dst_i, size_t src_i, size_t size) {
 int
 main(int argc, char **argv) {
     char *str = argv[1];
-    size_t i, j, k, size, count=0;
+    size_t i, j, k, size, count = 0;
 
     if (!str)
         str = "0123456789abcdefghijklmnopqrstuvwxyz";
