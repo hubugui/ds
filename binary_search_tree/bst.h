@@ -16,7 +16,10 @@ int bst_remove(struct bst *bst, int value);
 int bst_search(struct bst *bst, int value);
 int bst_max(struct bst *bst);
 int bst_min(struct bst *bst);
+
+/* depth in-order */
 void bst_dump(struct bst *bst);
+void bst_breadth_dump(struct bst *bst);
 
 #ifdef __cplusplus
 }

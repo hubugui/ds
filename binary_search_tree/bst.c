@@ -149,8 +149,11 @@ _bst_node_dump(struct bst_node *node) {
         _bst_node_dump(node->right);
 }
 
+/* depth in-order */
 void 
 bst_dump(struct bst *bst) {
     printf("total %d nodes.\n\n", bst->count);
     _bst_node_dump(bst->root);
 }
+
+void bst_breadth_dump(struct bst *bst);
