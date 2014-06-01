@@ -6,7 +6,8 @@
 
 struct avl_node {
     struct avl_node *left, *right;
-    int value;
+    int height;
+    void *value;
 };
 
 struct avl {
@@ -38,53 +39,91 @@ avl_delete(struct avl *avl) {
 }
 
 static struct avl_node *  
-_avl_node_search(struct avl *avl, int value, struct avl_node ***parent) {
+_avl_node_search(struct avl *avl, void *value, struct avl_node ***parent, compare cmp) {
     struct avl_node *node = avl->root;
+    int rc;
 
     for (*parent = &avl->root; node; node = **parent) {
-        if (value == node->value)
+        rc = cmp(value, node->value);
+        if (rc == 0)
             return node;
-        if (value < node->value)
+        if (rc < 0)
             *parent = &node->left;
-        else if (value > node->value)
+        else
             *parent = &node->right;
     }
     return NULL;
 }
 
 int 
-avl_search(struct avl *avl, int value) {
+avl_search(struct avl *avl, void *value, compare cmp) {
     struct avl_node **parent = NULL;
-    return _avl_node_search(avl, value, &parent) ? 0 : -1;
+    return _avl_node_search(avl, value, &parent, cmp) ? 0 : -1;
+}
+
+static struct avl_node *
+_left_rotate(struct avl_node *node) {
+   struct avl_note *r = node->right;
+
+    if (r) {
+        node->right = r->left;
+        r->left = node;
+    }
+    return r;
+}
+
+static struct avl_node *
+_right_rotate(struct avl_node *node) {
+   struct avl_note *r = node->left;
+
+    if (r) {
+        node->left = r->right;
+        r->right = node;
+    }
+    return r;
+}
+
+static int 
+_difference(struct avl_node *node) {
+    if (node->left && node->right)
+        return node->left->height - node->right->height;   
+    if (node->left)
+        return node->left->height;
+    if (node->right)
+        return node->right->height;
 }
 
 int 
-avl_insert(struct avl *avl, int value) {
+avl_insert(struct avl *avl, void *value, compare cmp) {
     struct avl_node *node = avl->root;
     struct avl_node **parent = &avl->root;
+    struct avl_node *rotate_node = NULL;
+    int rc;
 
     while (node) {
-        if (value < node->value)
-            parent = &node->left;
-        else if (value > node->value)
-            parent = &node->right;
-        else
+        if ((rc = cmp(value, node->value)) == 0)
             return 0;
+        diff = _difference(node);
+        if (ABS(diff) > 1)
+            rotate_node = node; 
+        parent = rc < 0 ? &node->left : &node->right;
         node = *parent;
     }
-
     if ((*parent = _avl_node_new()))
         (*parent)->value = value;
     else
         return -1;
     avl->count++;
 
-    /* adjust */
+    /* not balance */
+    if (rotate_node) {
+         
+    }
     return 0;
 }
 
 int 
-avl_remove(struct avl *avl, int value) {
+avl_remove(struct avl *avl, void *value, compare cmp) {
     struct avl_node **parent;
 	struct avl_node *node = _avl_node_search(avl, value, &parent);
    
@@ -144,17 +183,7 @@ avl_min(struct avl *avl) {
     return 0;
 }
 
-static void 
-_avl_node_dump(struct avl_node *node) {
-    if (node->left)
-        _avl_node_dump(node->left);
-    printf("%d\n", node->value);
-    if (node->right)
-        _avl_node_dump(node->right);
-}
-
 void 
-avl_dump(struct avl *avl) {
-    printf("total %d nodes.\n\n", avl->count);
-    _avl_node_dump(avl->root);
+avl_in_order(struct avl *avl, void (*dump)(void *value)) {
+    dump(avl->root->value);
 }
