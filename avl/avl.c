@@ -39,117 +39,127 @@ avl_delete(struct avl *avl) {
 }
 
 static struct avl_node *  
-_avl_node_search(struct avl *avl, void *value, struct avl_node ***parent, compare cmp) {
+_avl_node_search(struct avl *avl, void *value, struct avl_node ***target, compare cmp) {
     struct avl_node *node = avl->root;
     int rc;
 
-    for (*parent = &avl->root; node; node = **parent) {
+    for (*target = &avl->root; node; node = **target) {
         rc = cmp(value, node->value);
         if (rc == 0)
             return node;
         if (rc < 0)
-            *parent = &node->left;
+            *target = &node->left;
         else
-            *parent = &node->right;
+            *target = &node->right;
     }
     return NULL;
 }
 
 int 
 avl_search(struct avl *avl, void *value, compare cmp) {
-    struct avl_node **parent = NULL;
-    return _avl_node_search(avl, value, &parent, cmp) ? 0 : -1;
+    struct avl_node **target = NULL;
+    return _avl_node_search(avl, value, &target, cmp) ? 0 : -1;
 }
 
 static struct avl_node *
 _left_rotate(struct avl_node *node) {
-   struct avl_note *r = node->right;
+   struct avl_note *child = node->right;
 
-    if (r) {
-        node->right = r->left;
-        r->left = node;
+    if (child) {
+        node->right = child->left;
+        child->left = node;
     }
-    return r;
+    return child;
 }
 
 static struct avl_node *
 _right_rotate(struct avl_node *node) {
-   struct avl_note *r = node->left;
+   struct avl_note *child = node->left;
 
-    if (r) {
-        node->left = r->right;
-        r->right = node;
+    if (child) {
+        node->left = child->right;
+        child->right = node;
     }
-    return r;
+    return child;
 }
+
+#define LEFT_HEIGHT(n)   ((n && n->left) ? n->left->height : 0)
+#define RIGHT_HEIGHT(n)   ((n && n->right) ? n->right->height : 0)
 
 static int 
 _difference(struct avl_node *node) {
-    if (node->left && node->right)
-        return node->left->height - node->right->height;   
-    if (node->left)
-        return node->left->height;
-    if (node->right)
-        return node->right->height;
+    return ;
 }
 
 int 
 avl_insert(struct avl *avl, void *value, compare cmp) {
-    struct avl_node *node = avl->root;
-    struct avl_node **parent = &avl->root;
-    struct avl_node *rotate_node = NULL;
+    struct avl_node *node, *rotate_node, **parent, **target;
     int rc;
+    /* -1: left, 1: right, 0: invalid */
+    int left_or_right[2];
 
-    while (node) {
+    for (node = avl->root, parent = target = &avl->root, rotate_node = NULL;
+        node != NULL;
+        node = *target, parent = target) {
         if ((rc = cmp(value, node->value)) == 0)
             return 0;
-        diff = _difference(node);
-        if (ABS(diff) > 1)
-            rotate_node = node; 
-        parent = rc < 0 ? &node->left : &node->right;
-        node = *parent;
+        diff = LEFT_HEIGHT(node) - RIGHT_HEIGHT(node) - rc;
+        target = rc < 0 ? &node->let : &node->right;
+        if (ABS(diff) > 1) {
+            rotate_node = node;
+            left_or_right[0] = rc;
+            left_or_right[1] = cmp(value, (*target)->value);
+        }
     }
-    if ((*parent = _avl_node_new()))
-        (*parent)->value = value;
+    if ((*target = _avl_node_new()))
+        (*target)->value = value;
     else
         return -1;
     avl->count++;
 
     /* not balance */
     if (rotate_node) {
-         
+        if (left_or_right[0] == -1) {
+            if (left_or_right[1] == 1)
+                rotate_node->left = _left_rotate(rotate->left);
+            *parent = _right_rotate(rotate_node);
+        } else {
+            if (left_or_right[1] == -1)
+                rotate_node->right = _right_rotate(rotate->right);
+            *parent = _left_rotate(rotate_node);
+        }
     }
     return 0;
 }
 
 int 
 avl_remove(struct avl *avl, void *value, compare cmp) {
-    struct avl_node **parent;
-	struct avl_node *node = _avl_node_search(avl, value, &parent);
+    struct avl_node **target;
+	struct avl_node *node = _avl_node_search(avl, value, &target);
    
     if (!node)
         return -1;
 
     if (!node->left && !node->right)
-        *parent = NULL;
+        *target = NULL;
     else if (!node->left || !node->right)
-        *parent = node->left ? node->left : node->right;
+        *target = node->left ? node->left : node->right;
     else {
         /* right tree, min node */
         struct avl_node *min = node->right;
-        struct avl_node **min_parent = &node->right;
+        struct avl_node **min_target = &node->right;
 
         while (min->left) {
-            min_parent = &min->left;
+            min_target = &min->left;
             min = min->left;
         }
 
         /* min remove from origin */
-        *min_parent = min->right;
+        *min_target = min->right;
         min->left = node->left;
         min->right = node->right;
-        /* min insert to node's parent */
-        *parent = min;
+        /* min insert to node's target */
+        *target = min;
     }
 
     free(node);
