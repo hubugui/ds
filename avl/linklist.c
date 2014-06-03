@@ -7,6 +7,7 @@
 struct linklist_node {
     struct linklist_node *next;
     void *value;
+    void *userdata;
 };
 
 struct linklist {
@@ -48,11 +49,12 @@ void linklist_delete(struct linklist *list) {
 }
 
 int 
-linklist_insert(struct linklist *list, void *value) {
+linklist_insert(struct linklist *list, void *value, void *userdata) {
     struct linklist_node *node = _linklist_node_new();
 
     if (node) {
         node->value = value;
+        node->userdata = userdata;
         if (!list->head)
             list->head = node;
         if (list->tail)
@@ -64,10 +66,12 @@ linklist_insert(struct linklist *list, void *value) {
 }
 
 void * 
-linklist_remove_head(struct linklist *list) {
+linklist_remove_head(struct linklist *list, void **userdata_p) {
     struct linklist_node *node = _remove_head(list);
 
-    if (node)
+    if (node) {
+        *userdata_p = node->userdata;
         return node->value;
+    }
     return NULL;
 }

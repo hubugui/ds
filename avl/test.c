@@ -3,9 +3,19 @@
 
 #include "avl.h"
 
+static int _pre_depth = 1;
+
 static void 
 _dump(void *value) {
     printf("%ld ", (size_t) value);
+}
+
+static void 
+_bfs_dump(void *value, int depth) {
+    if (_pre_depth != depth)
+        printf("\n");
+    printf("%ld(%d) ", (size_t) value, depth);
+    _pre_depth = depth;
 }
 
 static int 
@@ -32,13 +42,15 @@ main(int argc, char **argv) {
                 printf("avl_insert() fail\n");
                 goto fail;
             }
-            avl_bfs(t, _dump);
-            printf("\n");
         }
     } else {
         
     }
 
+    avl_bfs(t, _bfs_dump);
+    _pre_depth = 1;
+    printf("\n");
+    
     if (avl_verify(t) == 0)
         printf("verify success.\n");
     else

@@ -17,6 +17,7 @@ struct avl;
  */
 typedef int (*compare)(void *v1, void *v2);
 typedef void (*dump)(void *value);
+typedef void (*bfs_dump)(void *value, int depth);
 
 struct avl *avl_new(void);
 void avl_delete(struct avl *avl);
@@ -31,7 +32,7 @@ int avl_verify(struct avl *avl);
 
 void avl_pre_order(struct avl *avl, dump dmp);
 void avl_in_order(struct avl *avl, dump dmp);
-void avl_bfs(struct avl *avl, dump dmp);
+void avl_bfs(struct avl *avl, bfs_dump dmp);
 
 #ifdef __cplusplus
 }
