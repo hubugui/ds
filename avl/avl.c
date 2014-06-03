@@ -3,17 +3,30 @@
 #include <stdlib.h>
 
 #include "avl.h"
+#include "linklist.h"
 
 struct avl_node {
-    struct avl_node *left, *right;
-    int height;
+    struct avl_node *left, *right, *parent;
     void *value;
+    int height;
 };
 
 struct avl {
     struct avl_node *root;
     unsigned int count;
 };
+
+#define MAX(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+#define ABS(x)              (((x) < 0) ? -(x) : (x))
+
+#define LEFT_HEIGHT(n)      (n->left ? 1 + n->left->height : 0)
+#define RIGHT_HEIGHT(n)     (n->right ? 1 + n->right->height : 0)
+#define DIFF_HEIGHT(n)      (LEFT_HEIGHT(n) - RIGHT_HEIGHT(n))
+#define HEIGHT(n)           (MAX(LEFT_HEIGHT(n), RIGHT_HEIGHT(n)))
+#define SET_HEIGHT(n)       (n->height = HEIGHT(n))
 
 #define _avl_node_new()	calloc(1, sizeof(struct avl_node))
 
@@ -39,94 +52,105 @@ avl_delete(struct avl *avl) {
 }
 
 static struct avl_node *  
-_avl_node_search(struct avl *avl, void *value, struct avl_node ***target, compare cmp) {
-    struct avl_node *node = avl->root;
+_node_search(struct avl *avl, void *value, struct avl_node ***parentp, compare cmp) {
+    struct avl_node *node;
     int rc;
 
-    for (*target = &avl->root; node; node = **target) {
-        rc = cmp(value, node->value);
-        if (rc == 0)
+    for (node = avl->root, *parentp = &avl->root; 
+        node != NULL; 
+        node = **parentp) {
+        if ((rc = cmp(value, node->value)) == 0)
             return node;
-        if (rc < 0)
-            *target = &node->left;
-        else
-            *target = &node->right;
+        *parentp = rc < 0 ? &node->left : &node->right;
     }
     return NULL;
 }
 
 int 
 avl_search(struct avl *avl, void *value, compare cmp) {
-    struct avl_node **target = NULL;
-    return _avl_node_search(avl, value, &target, cmp) ? 0 : -1;
+    struct avl_node **parentp = NULL;
+    return _node_search(avl, value, &parentp, cmp) ? 0 : -1;
 }
 
 static struct avl_node *
 _left_rotate(struct avl_node *node) {
-   struct avl_note *child = node->right;
+   struct avl_node *child = node->right;
 
     if (child) {
         node->right = child->left;
         child->left = node;
+        SET_HEIGHT(node);
+        SET_HEIGHT(child);
     }
     return child;
 }
 
 static struct avl_node *
 _right_rotate(struct avl_node *node) {
-   struct avl_note *child = node->left;
+   struct avl_node *child = node->left;
 
     if (child) {
         node->left = child->right;
         child->right = node;
+        SET_HEIGHT(node);
+        SET_HEIGHT(child);
     }
     return child;
 }
 
-#define LEFT_HEIGHT(n)   ((n && n->left) ? n->left->height : 0)
-#define RIGHT_HEIGHT(n)   ((n && n->right) ? n->right->height : 0)
-
-static int 
-_difference(struct avl_node *node) {
-    return ;
-}
-
 int 
 avl_insert(struct avl *avl, void *value, compare cmp) {
-    struct avl_node *node, *rotate_node, **parent, **target;
-    int rc;
-    /* -1: left, 1: right, 0: invalid */
-    int left_or_right[2];
+    struct avl_node *node, *parent, **parentp;
+    int rc; 
 
-    for (node = avl->root, parent = target = &avl->root, rotate_node = NULL;
+    /* insert */
+    for (node = avl->root, parent = NULL, parentp = &avl->root;
         node != NULL;
-        node = *target, parent = target) {
+        parent = node, node = (*parentp)) {
         if ((rc = cmp(value, node->value)) == 0)
             return 0;
-        diff = LEFT_HEIGHT(node) - RIGHT_HEIGHT(node) - rc;
-        target = rc < 0 ? &node->let : &node->right;
-        if (ABS(diff) > 1) {
-            rotate_node = node;
-            left_or_right[0] = rc;
-            left_or_right[1] = cmp(value, (*target)->value);
-        }
+        parentp = rc < 0 ? &node->left : &node->right;
     }
-    if ((*target = _avl_node_new()))
-        (*target)->value = value;
-    else
+    if ((*parentp = _avl_node_new())) {
+        (*parentp)->value = value;
+        (*parentp)->parent = parent;
+        avl->count++;
+        if (!parent)
+            return 0;
+    } else
         return -1;
-    avl->count++;
 
-    /* not balance */
-    if (rotate_node) {
-        if (left_or_right[0] == -1) {
-            if (left_or_right[1] == 1)
-                rotate_node->left = _left_rotate(rotate->left);
-            *parent = _right_rotate(rotate_node);
-        } else {
-            if (left_or_right[1] == -1)
-                rotate_node->right = _right_rotate(rotate->right);
-            *parent = _left_rotate(rotate_node);
+    /* backtracking */
+    for (node = parent; node != NULL; node = node->parent) {
+        int height;
+        /* parent height no change means tree balance still */
+        if (node->height == HEIGHT(node))
+            return 0;
+        SET_HEIGHT(node);
+
+        if (node->parent)
+            parentp = (node == node->parent->left) ? &node->parent->left : &node->parent->right;
+        else
+            parentp = &avl->root;
+        /* balance */
+        height = LEFT_HEIGHT(node) - RIGHT_HEIGHT(node);
+        printf("v=%ld, l=%ld, r=%ld, diff=%d, node=%p, p=%p\n",
+                (size_t) node->value, 
+                node->left ? (size_t) node->left->value : 0,
+                node->right ? (size_t) node->right->value : 0,
+                height, node, *parentp);
+        if (ABS(DIFF_HEIGHT(node)) > 1) {
+
+            if (cmp(value, node->value) == -1) {
+                if (cmp(value, node->left->value) == 1)
+                    node->left = _left_rotate(node->left);
+                *parentp = _right_rotate(node);
+            } else {
+                if (cmp(value, node->right->value) == -1)
+                    node->right = _right_rotate(node->right);
+                *parentp = _left_rotate(node);
+            }
+            break;
         }
     }
     return 0;
@@ -134,66 +158,113 @@ avl_insert(struct avl *avl, void *value, compare cmp) {
 
 int 
 avl_remove(struct avl *avl, void *value, compare cmp) {
-    struct avl_node **target;
-	struct avl_node *node = _avl_node_search(avl, value, &target);
-   
-    if (!node)
-        return -1;
-
-    if (!node->left && !node->right)
-        *target = NULL;
-    else if (!node->left || !node->right)
-        *target = node->left ? node->left : node->right;
-    else {
-        /* right tree, min node */
-        struct avl_node *min = node->right;
-        struct avl_node **min_target = &node->right;
-
-        while (min->left) {
-            min_target = &min->left;
-            min = min->left;
-        }
-
-        /* min remove from origin */
-        *min_target = min->right;
-        min->left = node->left;
-        min->right = node->right;
-        /* min insert to node's target */
-        *target = min;
-    }
-
-    free(node);
-    avl->count--;
-
-    /* adjust */
     return 0;
 }
 
 int 
-avl_max(struct avl *avl) {
+avl_max(struct avl *avl, void **value) {
     struct avl_node *node = avl->root;
 
     if (node) {
     	while (node->right)
             node = node->right;
-        return node->value;
+        *value = node->value;
+        return 0;
     }
-    return 0;
+    return -1;
 }
 
 int 
-avl_min(struct avl *avl) {
+avl_min(struct avl *avl, void **value) {
     struct avl_node *node = avl->root;
 
     if (node) {
     	while (node->left)
             node = node->left;
-        return node->value;
+        *value = node->value;
+        return 0;
     }
+    return -1;
+}
+
+static int 
+_in_order_visit(struct avl_node *node, int (*visit)(struct avl_node *node)) {
+    if (node->left)
+        _in_order_visit(node->left, visit);
+    if (visit(node) == -1)
+        return -1;
+    if (node->right)
+        _in_order_visit(node->right, visit);
     return 0;
 }
 
+int 
+_node_verify(struct avl_node *node) {
+    if (ABS(DIFF_HEIGHT(node)) > 1)
+        return -1;
+    return 0;
+}
+
+int 
+avl_verify(struct avl *avl) {
+    return _in_order_visit(avl->root, _node_verify);
+}
+
+static void 
+_pre_order(struct avl_node *node, dump dmp) {
+    dmp(node->value);
+    if (node->left)
+        _pre_order(node->left, dmp);
+    if (node->right)
+        _pre_order(node->right, dmp);
+}
+
 void 
-avl_in_order(struct avl *avl, void (*dump)(void *value)) {
-    dump(avl->root->value);
+avl_pre_order(struct avl *avl, dump dmp) {
+    _pre_order(avl->root, dmp);
+}
+
+static void 
+_in_order(struct avl_node *node, dump dmp) {
+    if (node->left)
+        _in_order(node->left, dmp);
+    dmp(node->value);
+    if (node->right)
+        _in_order(node->right, dmp);
+}
+
+void 
+avl_in_order(struct avl *avl, dump dmp) {
+    _in_order(avl->root, dmp);
+}
+
+void 
+avl_bfs(struct avl *avl, dump dmp) {
+    struct avl_node *node = avl->root;
+    struct linklist *list;
+    void *value;
+
+    if (!node)
+        return;
+    if ((list = linklist_new()) == NULL)
+        return;
+
+    if (linklist_insert(list, node))
+        goto fail;
+    while ((value = linklist_remove_head(list))) {
+        node = (struct avl_node *) value;
+        dmp(node->value);
+
+        if (node->left) {
+            if (linklist_insert(list, node->left))
+                goto fail;
+        }
+        if (node->right) {
+            if (linklist_insert(list, node->right))
+                goto fail;
+        }
+    }
+
+fail:
+    free(list);
 }
