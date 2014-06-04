@@ -4,7 +4,7 @@
 
 #include "avl.h"
 
-static long long int _pre_idx_inline = -1;
+static long long int _pre_idx_line = -1;
 static long long int _pre_depth = -1;
 static int _height;
 
@@ -19,8 +19,7 @@ _compare(void *v1, void *v2) {
 
 static void 
 _bfs_dump(void *value, long long int depth, long long int idx) {
-    long long int upper_nb = (long long int) pow(2, depth) - 1;
-    long long int i, j, idx_inline = idx - upper_nb;
+    long long int i, idx_line = idx - (((long long int) pow(2, depth)) - 1);
     long long int pow_unit = (long long int) pow(2, _height - depth);
     char *unit = "  ";
 
@@ -28,21 +27,21 @@ _bfs_dump(void *value, long long int depth, long long int idx) {
     long long int node_unit = 2 * pow_unit - 1;
 
     if (depth == _pre_depth) {
-        for (i = 0; i < (idx_inline - _pre_idx_inline) * (1 + node_unit) - 1; i++) {
+        for (i = 0; i < (idx_line - _pre_idx_line) * (1 + node_unit) - 1; i++) {
             printf("%s", unit);
         }
     } else {
         for (i = 0; i < left_unit; i++) {
             printf("%s", unit);
         }
-        for (i = 0; i < idx_inline * (1+node_unit); i++) {
+        for (i = 0; i < idx_line * (1+node_unit); i++) {
             printf("%s", unit);
         }
     }
     printf("%02lld", (long long int) value);
     if (idx + 2 == (long long int) pow(2, depth+1))
         printf("\n");
-     _pre_idx_inline = idx_inline;
+     _pre_idx_line = idx_line;
      _pre_depth = depth;
 }
 
