@@ -21,8 +21,7 @@ static void
 _bfs_dump(void *value, long long int depth, long long int idx) {
     long long int upper_nb = (long long int) pow(2, depth) - 1;
     long long int i, j, idx_inline = idx - upper_nb;
-    long long int n = _height - depth;
-    long long int pow_unit = (long long int) pow(2, n);
+    long long int pow_unit = (long long int) pow(2, _height - depth);
     char *unit = "  ";
 
     long long int left_unit = pow_unit - 1;
