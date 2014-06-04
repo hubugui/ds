@@ -51,6 +51,13 @@ avl_delete(struct avl *avl) {
     free(avl);
 }
 
+int 
+avl_height(struct avl *avl) {
+    if (avl->root)
+        return avl->root->height;
+    return 0; 
+}
+
 static struct avl_node *  
 _node_search(struct avl *avl, void *value, struct avl_node ***parentp, compare cmp) {
     struct avl_node *node;
@@ -102,12 +109,42 @@ _right_rotate(struct avl_node *node) {
     return child;
 }
 
+static void 
+_avl_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
+    struct avl_node *leaf, **parentp;
+
+    for (leaf = node, node = node->parent; node != NULL; node = node->parent) {
+        /* parent height no change means tree balance still */
+        if (node->height == HEIGHT(node))
+            return;
+        SET_HEIGHT(node);
+
+        /* balance */
+        if (ABS(DIFF_HEIGHT(node)) > 1) {
+            if (node->parent)
+                parentp = (node == node->parent->left) ? &node->parent->left : &node->parent->right;
+            else
+                parentp = &avl->root;
+            if (cmp(leaf->value, node->value) == -1) {
+                if (cmp(leaf->value, node->left->value) == 1)
+                    node->left = _left_rotate(node->left);
+                *parentp = _right_rotate(node);
+            } else {
+                if (cmp(leaf->value, node->right->value) == -1)
+                    node->right = _right_rotate(node->right);
+                *parentp = _left_rotate(node);
+            }
+            SET_HEIGHT((*parentp));
+            break;
+        }
+    }
+}
+
 int 
 avl_insert(struct avl *avl, void *value, compare cmp) {
     struct avl_node *node, *parent, **parentp;
     int rc; 
 
-    /* insert */
     for (node = avl->root, parent = NULL, parentp = &avl->root;
         node != NULL;
         parent = node, node = (*parentp)) {
@@ -118,38 +155,11 @@ avl_insert(struct avl *avl, void *value, compare cmp) {
     if ((*parentp = _avl_node_new())) {
         (*parentp)->value = value;
         (*parentp)->parent = parent;
+        if (parent)
+            _avl_rebalance(avl, *parentp, cmp);
         avl->count++;
-        if (!parent)
-            return 0;
     } else
         return -1;
-
-    /* backtracking */
-    for (node = parent; node != NULL; node = node->parent) {
-        /* parent height no change means tree balance still */
-        if (node->height == HEIGHT(node))
-            return 0;
-        SET_HEIGHT(node);
-
-        /* balance */
-        if (ABS(DIFF_HEIGHT(node)) > 1) {
-            if (node->parent)
-                parentp = (node == node->parent->left) ? &node->parent->left : &node->parent->right;
-            else
-                parentp = &avl->root;
-
-            if (cmp(value, node->value) == -1) {
-                if (cmp(value, node->left->value) == 1)
-                    node->left = _left_rotate(node->left);
-                *parentp = _right_rotate(node);
-            } else {
-                if (cmp(value, node->right->value) == -1)
-                    node->right = _right_rotate(node->right);
-                *parentp = _left_rotate(node);
-            }
-            break;
-        }
-    }
     return 0;
 }
 
@@ -186,12 +196,16 @@ avl_min(struct avl *avl, void **value) {
 
 static int 
 _in_order_visit(struct avl_node *node, int (*visit)(struct avl_node *node)) {
-    if (node->left)
-        _in_order_visit(node->left, visit);
-    if (visit(node) == -1)
-        return -1;
-    if (node->right)
-        _in_order_visit(node->right, visit);
+    if (node) {
+        int rc;
+
+        if ((rc = _in_order_visit(node->left, visit)))
+            return rc;
+        if ((rc = visit(node)))
+            return rc;
+        if ((_in_order_visit(node->right, visit)))
+            return rc;
+    }
     return 0;
 }
 
@@ -199,26 +213,18 @@ int
 _node_verify(struct avl_node *node) {
     if (ABS(DIFF_HEIGHT(node)) > 1)
         return -1;
+    if (node->parent) {
+        if (node == node->parent->left || node == node->parent->right)
+            return 0;
+        else
+            return -2;
+    }
     return 0;
 }
 
 int 
 avl_verify(struct avl *avl) {
     return _in_order_visit(avl->root, _node_verify);
-}
-
-static void 
-_pre_order(struct avl_node *node, dump dmp) {
-    dmp(node->value);
-    if (node->left)
-        _pre_order(node->left, dmp);
-    if (node->right)
-        _pre_order(node->right, dmp);
-}
-
-void 
-avl_pre_order(struct avl *avl, dump dmp) {
-    _pre_order(avl->root, dmp);
 }
 
 static void 
@@ -239,26 +245,28 @@ void
 avl_bfs(struct avl *avl, bfs_dump dmp) {
     struct avl_node *node = avl->root;
     struct linklist *list;
-    int depth = 1;
-    
+    long long int depth = 0, idx = 0, tmp = 0;
+
     if (!node)
         return;
+
     if ((list = linklist_new()) == NULL)
         return;
 
-    if (linklist_insert(list, node, (void *) depth))
+    if (linklist_insert(list, node, (void *) depth, NULL))
         goto fail;
-    while ((node = (struct avl_node *) linklist_remove_head(list, (void **) &depth))) {
-        dmp(node->value, depth);
 
-        if (node->left) {
-            if (linklist_insert(list, node->left, (void *) depth+1))
+    while (linklist_size(list) > 0) {
+        node = (struct avl_node *) linklist_remove_head(list, (void **) &depth, (void **) &tmp);
+
+        if (node) {
+            dmp(node->value, depth, idx);
+            if (linklist_insert(list, node->left, (void *) depth+1, NULL))
+                goto fail;
+            if (linklist_insert(list, node->right, (void *) depth+1, NULL))
                 goto fail;
         }
-        if (node->right) {
-            if (linklist_insert(list, node->right, (void *) depth+1))
-                goto fail;
-        }
+        idx++;
     }
 
 fail:
