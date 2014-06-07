@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "avl.h"
+#include "array_next.h"
 
 static long long int _pre_idx_line = -1;
 static long long int _pre_depth = -1;
@@ -48,13 +49,14 @@ _bfs_dump(void *value, long long int depth, long long int idx) {
 int
 main(int argc, char **argv) {
     int i, rc;
-    struct avl *t = avl_new();
+    struct avl *t;
 
-    if (!t) {
-        printf("avl_new() fail\n");
-        return -1;
-    }
     if (argc > 1) {
+        t = avl_new();
+        if (!t) {
+            printf("avl_new() fail\n");
+            return -1;
+        }
         for (i = 1; i < argc; i++) {
             if (avl_insert(t, (void *) (atoll(argv[i])), _compare)) {
                 printf("avl_insert() fail\n");
@@ -62,18 +64,38 @@ main(int argc, char **argv) {
             }
         }
     } else {
+        struct array_next *an = array_next_new(20);
+        size_t value[20] = {0};
+
+        t = avl_new();
+        if (!t) {
+            printf("avl_new() fail\n");
+            return -1;
+        }
+
+        while ((rc = array_next_next(an, value) == 0)) {
+            for (i = 0; i < 20; i++) {
+                printf("%d ", value[i]);
+                if (avl_insert(t, (void *) (value[i]), _compare)) {
+                    printf("avl_insert() fail\n");
+                    goto fail;
+                }
+            }
+            printf("\n");
+            rc = avl_verify(t); 
+            if (rc == -1)
+                printf("verify fail in height.\n");
+            else if (rc == -2)
+                printf("verify fail in parent point.\n");
+        }
+
+        array_next_delete(an); 
     }
 
     _height = avl_height(t);
     avl_bfs(t, _bfs_dump);
     _pre_depth = -1;
     printf("\n");
-
-    rc = avl_verify(t);            
-    if (rc == -1)
-        printf("verify fail in height.\n");
-    else if (rc == -2)
-        printf("verify fail in parent point.\n");
 
 fail:
     avl_delete(t);
