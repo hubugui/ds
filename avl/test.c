@@ -11,9 +11,9 @@ static int _height;
 
 static int 
 _compare(void *v1, void *v2) {
-    if (v1 > v2)
+    if ((size_t) v1 > (size_t) v2)
         return 1;
-    if (v1 < v2)
+    if ((size_t) v1 < (size_t) v2)
         return -1;
     return 0;
 }
@@ -62,19 +62,25 @@ main(int argc, char **argv) {
                 printf("avl_insert() fail\n");
                 goto fail;
             }
+
+            _height = avl_height(t);
+            avl_bfs(t, _bfs_dump);
+            _pre_depth = -1;
+            printf("\n");
         }
     } else {
-        struct array_next *an = array_next_new(20);
-        size_t value[20] = {0};
-
-        t = avl_new();
-        if (!t) {
-            printf("avl_new() fail\n");
-            return -1;
-        }
+        #define MAX_SIZE    15
+        struct array_next *an = array_next_new(MAX_SIZE);
+        size_t value[MAX_SIZE] = {0};
 
         while ((rc = array_next_next(an, value) == 0)) {
-            for (i = 0; i < 20; i++) {
+            t = avl_new();
+            if (!t) {
+                printf("avl_new() fail\n");
+                return -1;
+            }
+
+            for (i = 0; i < MAX_SIZE; i++) {
                 printf("%d ", value[i]);
                 if (avl_insert(t, (void *) (value[i]), _compare)) {
                     printf("avl_insert() fail\n");
@@ -83,21 +89,22 @@ main(int argc, char **argv) {
             }
             printf("\n");
             rc = avl_verify(t); 
-            if (rc == -1)
+            if (rc == -1) {
                 printf("verify fail in height.\n");
-            else if (rc == -2)
+                exit(rc);
+            } else if (rc == -2) {
                 printf("verify fail in parent point.\n");
+                exit(rc);
+            }
+            avl_delete(t);
+            t = NULL;
         }
 
         array_next_delete(an); 
     }
 
-    _height = avl_height(t);
-    avl_bfs(t, _bfs_dump);
-    _pre_depth = -1;
-    printf("\n");
-
 fail:
-    avl_delete(t);
+    if (t)
+        avl_delete(t);
     return 0;
 }

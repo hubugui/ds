@@ -86,6 +86,8 @@ _left_rotate(struct avl_node *node) {
     if (child) {
         child->parent = node->parent;
         node->right = child->left;
+        if (node->right)
+            node->right->parent = node;
         node->parent = child;
         child->left = node;        
         SET_HEIGHT(node);
@@ -101,6 +103,8 @@ _right_rotate(struct avl_node *node) {
     if (child) {
         child->parent = node->parent;
         node->left = child->right;
+        if (node->left)
+            node->left->parent = node;
         node->parent = child;
         child->right = node;
         SET_HEIGHT(node);
@@ -125,7 +129,7 @@ _avl_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
                 parentp = (node == node->parent->left) ? &node->parent->left : &node->parent->right;
             else
                 parentp = &avl->root;
-            if (cmp(leaf->value, node->value) == -1) {
+            if (cmp(leaf->value, node->value) == -1) {                    
                 if (cmp(leaf->value, node->left->value) == 1)
                     node->left = _left_rotate(node->left);
                 *parentp = _right_rotate(node);
