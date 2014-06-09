@@ -250,6 +250,7 @@ avl_bfs(struct avl *avl, bfs_dump dmp) {
     struct avl_node *node = avl->root;
     struct linklist *list;
     long long int depth = 0, idx = 0, tmp = 0;
+    int height = avl_height(avl);
 
     if (!node)
         return;
@@ -263,13 +264,14 @@ avl_bfs(struct avl *avl, bfs_dump dmp) {
     while (linklist_size(list) > 0) {
         node = (struct avl_node *) linklist_remove_head(list, (void **) &depth, (void **) &tmp);
 
-        if (node) {
+        if (node)
             dmp(node->value, depth, idx);
-            if (linklist_insert(list, node->left, (void *) depth+1, NULL))
-                goto fail;
-            if (linklist_insert(list, node->right, (void *) depth+1, NULL))
-                goto fail;
-        }
+        if (linklist_insert(list, node ? node->left : NULL, (void *) depth+1, NULL))
+            goto fail;
+        if (linklist_insert(list, node ? node->right : NULL, (void *) depth+1, NULL))
+            goto fail;
+        if (idx + 1 == (long long int) pow(2, height+1))
+           break; 
         idx++;
     }
 

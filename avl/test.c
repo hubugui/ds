@@ -32,6 +32,8 @@ _bfs_dump(void *value, long long int depth, long long int idx) {
             printf("%s", unit);
         }
     } else {
+        if (depth > 0)
+            printf("\n");
         for (i = 0; i < left_unit; i++) {
             printf("%s", unit);
         }
@@ -40,71 +42,84 @@ _bfs_dump(void *value, long long int depth, long long int idx) {
         }
     }
     printf("%02lld", (long long int) value);
-    if (idx + 2 == (long long int) pow(2, depth+1))
-        printf("\n");
      _pre_idx_line = idx_line;
      _pre_depth = depth;
 }
 
-int
-main(int argc, char **argv) {
-    int i, rc;
-    struct avl *t;
+static int 
+_arg(int argc, char **argv)
+{
+    int rc = 0, i;
+    struct avl *t = avl_new();
 
-    if (argc > 1) {
+    if (!t) {
+        printf("avl_new() fail\n");
+        return -1;
+    }
+    for (i = 1; i < argc; i++) {
+        if (avl_insert(t, (void *) (atoll(argv[i])), _compare)) {
+            printf("avl_insert() fail\n");
+            rc = -1;
+            goto fail;
+        }
+        _height = avl_height(t);
+        avl_bfs(t, _bfs_dump);
+        _pre_depth = -1;
+        printf("\n");
+    }
+fail:
+    avl_delete(t);
+    return rc;
+}
+
+static int 
+_array(int size)
+{
+    int rc = 0, i;
+    size_t value[1024];
+    struct array_next *an = array_next_new(size);
+    struct avl *t = NULL;
+
+    while ((rc = array_next_next(an, value) == 0)) {
         t = avl_new();
         if (!t) {
             printf("avl_new() fail\n");
             return -1;
         }
-        for (i = 1; i < argc; i++) {
-            if (avl_insert(t, (void *) (atoll(argv[i])), _compare)) {
+
+        for (i = 0; i < size; i++) {
+            printf("%d ", value[i]);
+            if (avl_insert(t, (void *) (value[i]), _compare)) {
                 printf("avl_insert() fail\n");
                 goto fail;
             }
-
-            _height = avl_height(t);
-            avl_bfs(t, _bfs_dump);
-            _pre_depth = -1;
-            printf("\n");
         }
-    } else {
-        #define MAX_SIZE    15
-        struct array_next *an = array_next_new(MAX_SIZE);
-        size_t value[MAX_SIZE] = {0};
-
-        while ((rc = array_next_next(an, value) == 0)) {
-            t = avl_new();
-            if (!t) {
-                printf("avl_new() fail\n");
-                return -1;
-            }
-
-            for (i = 0; i < MAX_SIZE; i++) {
-                printf("%d ", value[i]);
-                if (avl_insert(t, (void *) (value[i]), _compare)) {
-                    printf("avl_insert() fail\n");
-                    goto fail;
-                }
-            }
-            printf("\n");
-            rc = avl_verify(t); 
-            if (rc == -1) {
-                printf("verify fail in height.\n");
-                exit(rc);
-            } else if (rc == -2) {
-                printf("verify fail in parent point.\n");
-                exit(rc);
-            }
-            avl_delete(t);
-            t = NULL;
+        printf("\n");
+        rc = avl_verify(t); 
+        if (rc == -1) {
+            printf("verify fail in height.\n");
+            exit(rc);
+        } else if (rc == -2) {
+            printf("verify fail in parent point.\n");
+            exit(rc);
         }
-
-        array_next_delete(an); 
+        avl_delete(t);
+        t = NULL;
     }
 
+    array_next_delete(an); 
 fail:
     if (t)
         avl_delete(t);
+    return rc;
+}
+
+int 
+main(int argc, char **argv)
+{
+    if (argc > 2)
+        _arg(argc, argv);
+     else
+        _array(atoi(argv[1]));
     return 0;
 }
