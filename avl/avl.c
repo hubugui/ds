@@ -169,6 +169,43 @@ avl_insert(struct avl *avl, void *value, compare cmp) {
 
 int 
 avl_remove(struct avl *avl, void *value, compare cmp) {
+    struct avl_node *node, *parent, **parentp;
+    int rc = -1;
+
+    for (node = avl->root, parent = NULL, parentp = &avl->root;
+        node != NULL;
+        parent = node, node = (*parentp)) {
+        if ((rc = cmp(value, node->value)) == 0)
+            break;
+        parentp = rc < 0 ? &node->left : &node->right;
+    }
+    if (rc == 0) {
+        struct avl_node *min = *left = NULL;
+        /* find the min node from right subtree */
+        if ((left = node->right)) {
+            while (left) {
+                min = left;
+                left = min->left;
+            }
+            /* min's parent and right */
+            if (min->right)
+                min->right->parent = min->parent;
+            min->parent->left = min->right;
+
+            *parentp = min;
+            min->parent
+        } else {
+            *parentp = node->left;
+            if (node->left)
+                node->left->parent = parent;
+            SET_HEIGHT(parent);
+        }        
+        if (parent)
+            _avl_rebalance(avl, *parentp, cmp);
+        avl->count--;
+        free(node);
+    } else
+        return -1;
     return 0;
 }
 

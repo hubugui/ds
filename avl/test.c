@@ -75,7 +75,7 @@ fail:
 static int 
 _array(int size)
 {
-    int rc = 0, i;
+    int rc = -1, i;
     size_t value[1024];
     struct array_next *an = array_next_new(size);
     struct avl *t = NULL;
@@ -84,7 +84,7 @@ _array(int size)
         t = avl_new();
         if (!t) {
             printf("avl_new() fail\n");
-            return -1;
+            goto fail;
         }
 
         for (i = 0; i < size; i++) {
@@ -107,8 +107,9 @@ _array(int size)
         t = NULL;
     }
 
-    array_next_delete(an); 
+    rc = 0;
 fail:
+    array_next_delete(an);
     if (t)
         avl_delete(t);
     return rc;
@@ -118,8 +119,7 @@ int
 main(int argc, char **argv)
 {
     if (argc > 2)
-        _arg(argc, argv);
+        return _arg(argc, argv);
      else
-        _array(atoi(argv[1]));
-    return 0;
+        return _array(atoi(argv[1]));
 }
