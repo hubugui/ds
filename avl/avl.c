@@ -173,33 +173,46 @@ avl_remove(struct avl *avl, void *value, compare cmp) {
     if ((node = _node_search(avl, value, &parentp, cmp)) == NULL)
         return -1;
 
+    /* leaf */
     if (!node->left && !node->right) {
         *parentp = NULL;
         goto rebalance;
     }
+    /* single child */
     if (!node->left || !node->right) {
         *parentp = node->left ? node->left : node->right;
+        (*parentp)->parent = node->parent;
         goto rebalance;
     }
 
-    /* find the min node from right subtree */
-    left = node->right;
-    while (left) {
+    /**
+     * double child
+     * find the min node from right subtree
+     */
+    for (left = node->right; left; left = min->left) {
         min = left;
-        left = min->left;
+    }    
+
+    /**
+     * left will mark rebanlance position 
+     * do not forget min's right subtree
+     */
+    if (min == node->right)
+        left = min;
+    else {
+        left = min->parent;
+        min->parent->left = min->right;
     }
 
-    min->parent->left = NULL;
-    SET_HEIGHT(min->parent);
-
+    /* move min to node position */
     min->parent = node->parent;
     *parentp = min;
 
+    /* put to node */
+    node = left;
+
 rebalance:
-    node->parent = NULL;
-    SET_HEIGHT(node->parent);
-    if (parent)
-        _avl_rebalance(avl, *parentp, cmp);
+    _avl_rebalance(avl, node->parent, cmp);
     avl->count--;
     free(node);
     return 0;
