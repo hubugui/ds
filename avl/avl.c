@@ -1,3 +1,4 @@
+#include <math.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,7 +113,7 @@ _right_rotate(struct avl_node *node) {
 }
 
 static void 
-_avl_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
+_insert_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
     struct avl_node *leaf, **parentp;
 
     for (leaf = node, node = node->parent; node != NULL; node = node->parent) {
@@ -121,7 +122,7 @@ _avl_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
             return;
         SET_HEIGHT(node);
 
-        /* balance */
+        /* rebalance */
         if (ABS(DIFF_HEIGHT(node)) > 1) {
             if (node->parent)
                 parentp = (node == node->parent->left) ? &node->parent->left : &node->parent->right;
@@ -158,17 +159,48 @@ avl_insert(struct avl *avl, void *value, compare cmp) {
         (*parentp)->value = value;
         (*parentp)->parent = parent;
         if (parent)
-            _avl_rebalance(avl, *parentp, cmp);
+            _insert_rebalance(avl, *parentp, cmp);
         avl->count++;
     } else
         return -1;
     return 0;
 }
 
+static void 
+_remove_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
+    struct avl_node **parentp;
+
+    for (parentp = NULL; node != NULL; node = node->parent) {
+retry:        
+        SET_HEIGHT(node);
+
+        /* rebalance */
+        if (ABS(DIFF_HEIGHT(node)) > 1) {
+            if (node->parent)
+                parentp = (node == node->parent->left) ? &node->parent->left : &node->parent->right;
+            else
+                parentp = &avl->root;
+            /* left height > right height */
+            if (DIFF_HEIGHT(node) > 0) {
+                if (node->left->right)
+                    node->left = _left_rotate(node->left);
+                *parentp = _right_rotate(node);
+                node = (*parentp)->left;
+            } else {
+                if (node->right->left)
+                    node->right = _right_rotate(node->right);
+                *parentp = _left_rotate(node);
+                node = (*parentp)->right;
+            }
+            SET_HEIGHT((*parentp));
+            goto retry;
+        }
+    }
+}
+
 int 
 avl_remove(struct avl *avl, void *value, compare cmp) {
-    struct avl_node *node, *parent, **parentp, *min, *left;
-    int rc = -1;
+    struct avl_node *node, **parentp, *min, *left;
 
     if ((node = _node_search(avl, value, &parentp, cmp)) == NULL)
         return -1;
@@ -202,17 +234,18 @@ avl_remove(struct avl *avl, void *value, compare cmp) {
     else {
         left = min->parent;
         min->parent->left = min->right;
+        if (min->right)
+            min->right->parent = min->parent;
     }
 
     /* move min to node position */
     min->parent = node->parent;
     *parentp = min;
-
     /* put to node */
     node = left;
 
 rebalance:
-    _avl_rebalance(avl, node->parent, cmp);
+    _remove_rebalance(avl, node->parent, cmp);
     avl->count--;
     free(node);
     return 0;
@@ -304,7 +337,7 @@ avl_bfs(struct avl *avl, bfs_dump dmp) {
     if ((list = linklist_new()) == NULL)
         return;
 
-    if (linklist_insert(list, node, (void *) depth, NULL))
+    if (linklist_insert(list, node, (void *) (int) depth, NULL))
         goto fail;
 
     while (linklist_size(list) > 0) {
@@ -312,9 +345,9 @@ avl_bfs(struct avl *avl, bfs_dump dmp) {
 
         if (node)
             dmp(node->value, depth, idx);
-        if (linklist_insert(list, node ? node->left : NULL, (void *) depth+1, NULL))
+        if (linklist_insert(list, node ? node->left : NULL, (void *) (int) (depth+1), NULL))
             goto fail;
-        if (linklist_insert(list, node ? node->right : NULL, (void *) depth+1, NULL))
+        if (linklist_insert(list, node ? node->right : NULL, (void *) (int) (depth+1), NULL))
             goto fail;
         if (idx + 1 == (long long int) pow(2, height+1))
            break; 

@@ -41,9 +41,16 @@ _bfs_dump(void *value, long long int depth, long long int idx) {
             printf("%s", unit);
         }
     }
-    printf("%02lld", (long long int) value);
+    printf("%02lld", (long long int) (int) value);
      _pre_idx_line = idx_line;
      _pre_depth = depth;
+}
+
+static void _bfs(struct avl *t) {
+    _height = avl_height(t);
+    avl_bfs(t, _bfs_dump);
+    _pre_depth = -1;
+    printf("\n");
 }
 
 static int 
@@ -56,17 +63,24 @@ _arg(int argc, char **argv)
         printf("avl_new() fail\n");
         return -1;
     }
-    for (i = 1; i < argc; i++) {
-        if (avl_insert(t, (void *) (atoll(argv[i])), _compare)) {
-            printf("avl_insert() fail\n");
+    for (i = 1; i < argc - 1; i++) {
+        if (avl_insert(t, (void *) (int) (atoll(argv[i])), _compare)) {
+            printf("avl_insert(%d) fail\n", (int) (atoll(argv[argc - 1])));
             rc = -1;
             goto fail;
-        }
-        _height = avl_height(t);
-        avl_bfs(t, _bfs_dump);
-        _pre_depth = -1;
-        printf("\n");
+        }        
     }
+
+    _bfs(t);
+
+    /* remove */
+    if (avl_remove(t, (void *) (int) (atoll(argv[argc - 1])), _compare)) {
+        printf("avl_remove(%d) fail\n", (int) (atoll(argv[argc - 1])));
+        rc = -1;
+        goto fail;
+    }
+    
+    _bfs(t);
 fail:
     avl_delete(t);
     return rc;
