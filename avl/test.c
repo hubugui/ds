@@ -10,7 +10,8 @@ static long long int _pre_depth = -1;
 static int _height;
 
 static int 
-_compare(void *v1, void *v2) {
+_compare(void *v1, void *v2)
+{
     if ((size_t) v1 > (size_t) v2)
         return 1;
     if ((size_t) v1 < (size_t) v2)
@@ -19,7 +20,8 @@ _compare(void *v1, void *v2) {
 }
 
 static void 
-_bfs_dump(void *value, long long int depth, long long int idx) {
+_bfs_dump(void *value, long long int depth, long long int idx)
+{
     long long int i, idx_line = idx - (((long long int) pow(2, depth)) - 1);
     long long int pow_unit = (long long int) pow(2, _height - depth);
     char *unit = "  ";
@@ -41,16 +43,28 @@ _bfs_dump(void *value, long long int depth, long long int idx) {
             printf("%s", unit);
         }
     }
-    printf("%02lld", (long long int) (int) value);
+    printf("%02lld", (long long int) value);
      _pre_idx_line = idx_line;
      _pre_depth = depth;
 }
 
-static void _bfs(struct avl *t) {
+static void _bfs(struct avl *t)
+{
+    int rc;
+
     _height = avl_height(t);
     avl_bfs(t, _bfs_dump);
     _pre_depth = -1;
     printf("\n");
+
+    rc = avl_verify(t);
+    if (rc == -1) {
+        printf("verify fail in height.\n");
+        exit(rc);
+    } else if (rc == -2) {
+        printf("verify fail in parent point.\n");
+        exit(rc);
+    }
 }
 
 static int 
@@ -63,23 +77,22 @@ _arg(int argc, char **argv)
         printf("avl_new() fail\n");
         return -1;
     }
+    /* insert */
     for (i = 1; i < argc - 1; i++) {
-        if (avl_insert(t, (void *) (int) (atoll(argv[i])), _compare)) {
+        if (avl_insert(t, (void *) (long int) (atoll(argv[i])), _compare)) {
             printf("avl_insert(%d) fail\n", (int) (atoll(argv[argc - 1])));
             rc = -1;
             goto fail;
         }        
     }
-
     _bfs(t);
 
-    /* remove */
-    if (avl_remove(t, (void *) (int) (atoll(argv[argc - 1])), _compare)) {
+    /* remove last element */
+    if (avl_remove(t, (void *) (long int) (atoll(argv[argc - 1])), _compare)) {
         printf("avl_remove(%d) fail\n", (int) (atoll(argv[argc - 1])));
         rc = -1;
         goto fail;
     }
-    
     _bfs(t);
 fail:
     avl_delete(t);
@@ -102,7 +115,7 @@ _array(int size)
         }
 
         for (i = 0; i < size; i++) {
-            printf("%d ", value[i]);
+            printf("%ld ", value[i]);
             if (avl_insert(t, (void *) (value[i]), _compare)) {
                 printf("avl_insert() fail\n");
                 goto fail;

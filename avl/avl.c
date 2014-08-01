@@ -18,9 +18,9 @@ struct avl {
 };
 
 #define MAX(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
+    ({ __typeof__ (a) _a = (a); \
+        __typeof__ (b) _b = (b); \
+        _a > _b ? _a : _b; })
 #define ABS(x)              (((x) < 0) ? -(x) : (x))
 
 #define LEFT_HEIGHT(n)      (n->left ? 1 + n->left->height : 0)
@@ -29,10 +29,10 @@ struct avl {
 #define HEIGHT(n)           (MAX(LEFT_HEIGHT(n), RIGHT_HEIGHT(n)))
 #define SET_HEIGHT(n)       (n->height = HEIGHT(n))
 
-#define _avl_node_new()	calloc(1, sizeof(struct avl_node))
+#define _avl_node_new() calloc(1, sizeof(struct avl_node))
 
-static void 
-_avl_node_delete(struct avl_node *node) {
+static void _avl_node_delete(struct avl_node *node)
+{
     if (node->left)
         _avl_node_delete(node->left);
     if (node->right)
@@ -40,31 +40,31 @@ _avl_node_delete(struct avl_node *node) {
     free(node);
 }
 
-struct avl * 
-avl_new(void) {
+struct avl *avl_new(void)
+{
     return calloc(1, sizeof(struct avl));
 }
 
-void 
-avl_delete(struct avl *avl) {
+void avl_delete(struct avl *avl)
+{
     if (avl->root)
         _avl_node_delete(avl->root);
     free(avl);
 }
 
-int 
-avl_height(struct avl *avl) {
+int avl_height(struct avl *avl)
+{
     return avl->root ? avl->root->height : 0;
 }
 
-static struct avl_node *  
-_node_search(struct avl *avl, void *value, struct avl_node ***parentp, compare cmp) {
+static struct avl_node *_node_search(struct avl *avl, void *value, struct avl_node ***parentp, compare cmp)
+{
     struct avl_node *node;
     int rc;
 
-    for (node = avl->root, *parentp = &avl->root; 
-        node != NULL; 
-        node = **parentp) {
+    for (node = avl->root, *parentp = &avl->root;
+            node != NULL;
+            node = **parentp) {
         if ((rc = cmp(value, node->value)) == 0)
             return node;
         *parentp = rc < 0 ? &node->left : &node->right;
@@ -72,15 +72,15 @@ _node_search(struct avl *avl, void *value, struct avl_node ***parentp, compare c
     return NULL;
 }
 
-int 
-avl_search(struct avl *avl, void *value, compare cmp) {
+int avl_search(struct avl *avl, void *value, compare cmp)
+{
     struct avl_node **parentp = NULL;
     return _node_search(avl, value, &parentp, cmp) ? 0 : -1;
 }
 
-static struct avl_node *
-_left_rotate(struct avl_node *node) {
-   struct avl_node *child = node->right;
+static struct avl_node *_left_rotate(struct avl_node *node)
+{
+    struct avl_node *child = node->right;
 
     if (child) {
         child->parent = node->parent;
@@ -88,16 +88,16 @@ _left_rotate(struct avl_node *node) {
         if (node->right)
             node->right->parent = node;
         node->parent = child;
-        child->left = node;        
+        child->left = node;
         SET_HEIGHT(node);
         SET_HEIGHT(child);
     }
     return child;
 }
 
-static struct avl_node *
-_right_rotate(struct avl_node *node) {
-   struct avl_node *child = node->left;
+static struct avl_node *_right_rotate(struct avl_node *node)
+{
+    struct avl_node *child = node->left;
 
     if (child) {
         child->parent = node->parent;
@@ -112,8 +112,8 @@ _right_rotate(struct avl_node *node) {
     return child;
 }
 
-static void 
-_insert_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
+static void _insert_rebalance(struct avl *avl, struct avl_node *node, compare cmp)
+{
     struct avl_node *leaf, **parentp;
 
     for (leaf = node, node = node->parent; node != NULL; node = node->parent) {
@@ -125,10 +125,11 @@ _insert_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
         /* rebalance */
         if (ABS(DIFF_HEIGHT(node)) > 1) {
             if (node->parent)
-                parentp = (node == node->parent->left) ? &node->parent->left : &node->parent->right;
+                parentp = (node == node->parent->left) ? 
+                        &node->parent->left : &node->parent->right;
             else
                 parentp = &avl->root;
-            if (cmp(leaf->value, node->value) == -1) {                    
+            if (cmp(leaf->value, node->value) == -1) {
                 if (cmp(leaf->value, node->left->value) == 1)
                     node->left = _left_rotate(node->left);
                 *parentp = _right_rotate(node);
@@ -143,14 +144,14 @@ _insert_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
     }
 }
 
-int 
-avl_insert(struct avl *avl, void *value, compare cmp) {
+int avl_insert(struct avl *avl, void *value, compare cmp)
+{
     struct avl_node *node, *parent, **parentp;
-    int rc; 
+    int rc;
 
     for (node = avl->root, parent = NULL, parentp = &avl->root;
-        node != NULL;
-        parent = node, node = (*parentp)) {
+            node != NULL;
+            parent = node, node = (*parentp)) {
         if ((rc = cmp(value, node->value)) == 0)
             return 0;
         parentp = rc < 0 ? &node->left : &node->right;
@@ -166,18 +167,18 @@ avl_insert(struct avl *avl, void *value, compare cmp) {
     return 0;
 }
 
-static void 
-_remove_rebalance(struct avl *avl, struct avl_node *node, compare cmp) {
+static void _remove_rebalance(struct avl *avl, struct avl_node *node, compare cmp)
+{
     struct avl_node **parentp;
 
     for (parentp = NULL; node != NULL; node = node->parent) {
-retry:        
+retry:
         SET_HEIGHT(node);
-
         /* rebalance */
         if (ABS(DIFF_HEIGHT(node)) > 1) {
             if (node->parent)
-                parentp = (node == node->parent->left) ? &node->parent->left : &node->parent->right;
+                parentp = (node == node->parent->left) ? 
+                        &node->parent->left : &node->parent->right;
             else
                 parentp = &avl->root;
             /* left height > right height */
@@ -198,13 +199,21 @@ retry:
     }
 }
 
-int 
-avl_remove(struct avl *avl, void *value, compare cmp) {
+static void _swap_value(struct avl_node *node1, struct avl_node *node2)
+{
+    void *value = node1->value;
+    node1->value = node2->value;
+    node2->value = value;
+}
+
+int avl_remove(struct avl *avl, void *value, compare cmp)
+{
     struct avl_node *node, **parentp, *min, *left;
 
     if ((node = _node_search(avl, value, &parentp, cmp)) == NULL)
         return -1;
 
+retry:
     /* leaf */
     if (!node->left && !node->right) {
         *parentp = NULL;
@@ -216,33 +225,16 @@ avl_remove(struct avl *avl, void *value, compare cmp) {
         (*parentp)->parent = node->parent;
         goto rebalance;
     }
-
-    /**
-     * double child
-     * find the min node from right subtree
-     */
+    /* double child, find the min node from right subtree */
     for (left = node->right; left; left = min->left) {
         min = left;
-    }    
-
-    /**
-     * left will mark rebanlance position 
-     * do not forget min's right subtree
-     */
-    if (min == node->right)
-        left = min;
-    else {
-        left = min->parent;
-        min->parent->left = min->right;
-        if (min->right)
-            min->right->parent = min->parent;
     }
-
-    /* move min to node position */
-    min->parent = node->parent;
-    *parentp = min;
-    /* put to node */
-    node = left;
+    _swap_value(node, min);
+    /* now node only have 0 or 1 child */
+    node = min;
+    parentp = (node == node->parent->left) ?
+              &node->parent->left : &node->parent->right;
+    goto retry;
 
 rebalance:
     _remove_rebalance(avl, node->parent, cmp);
@@ -251,12 +243,12 @@ rebalance:
     return 0;
 }
 
-int 
-avl_max(struct avl *avl, void **value) {
+int avl_max(struct avl *avl, void **value)
+{
     struct avl_node *node = avl->root;
 
     if (node) {
-    	while (node->right)
+        while (node->right)
             node = node->right;
         *value = node->value;
         return 0;
@@ -264,12 +256,12 @@ avl_max(struct avl *avl, void **value) {
     return -1;
 }
 
-int 
-avl_min(struct avl *avl, void **value) {
+int avl_min(struct avl *avl, void **value)
+{
     struct avl_node *node = avl->root;
 
     if (node) {
-    	while (node->left)
+        while (node->left)
             node = node->left;
         *value = node->value;
         return 0;
@@ -277,8 +269,8 @@ avl_min(struct avl *avl, void **value) {
     return -1;
 }
 
-static int 
-_in_order_visit(struct avl_node *node, int (*visit)(struct avl_node *node)) {
+static int _in_order_visit(struct avl_node *node, int (*visit)(struct avl_node *node))
+{
     if (node) {
         int rc;
 
@@ -292,8 +284,8 @@ _in_order_visit(struct avl_node *node, int (*visit)(struct avl_node *node)) {
     return 0;
 }
 
-int 
-_node_verify(struct avl_node *node) {
+int _node_verify(struct avl_node *node)
+{
     if (ABS(DIFF_HEIGHT(node)) > 1)
         return -1;
     if (node->parent) {
@@ -305,13 +297,13 @@ _node_verify(struct avl_node *node) {
     return 0;
 }
 
-int 
-avl_verify(struct avl *avl) {
+int avl_verify(struct avl *avl)
+{
     return _in_order_visit(avl->root, _node_verify);
 }
 
-static void 
-_in_order(struct avl_node *node, dump dmp) {
+static void _in_order(struct avl_node *node, dump dmp)
+{
     if (node->left)
         _in_order(node->left, dmp);
     dmp(node->value);
@@ -319,13 +311,13 @@ _in_order(struct avl_node *node, dump dmp) {
         _in_order(node->right, dmp);
 }
 
-void 
-avl_in_order(struct avl *avl, dump dmp) {
+void avl_in_order(struct avl *avl, dump dmp)
+{
     _in_order(avl->root, dmp);
 }
 
-void 
-avl_bfs(struct avl *avl, bfs_dump dmp) {
+void avl_bfs(struct avl *avl, bfs_dump dmp)
+{
     struct avl_node *node = avl->root;
     struct linklist *list;
     long long int depth = 0, idx = 0, tmp = 0;
@@ -333,11 +325,10 @@ avl_bfs(struct avl *avl, bfs_dump dmp) {
 
     if (!node)
         return;
-
     if ((list = linklist_new()) == NULL)
         return;
 
-    if (linklist_insert(list, node, (void *) (int) depth, NULL))
+    if (linklist_insert(list, node, (void *) (long int) depth, NULL))
         goto fail;
 
     while (linklist_size(list) > 0) {
@@ -345,12 +336,12 @@ avl_bfs(struct avl *avl, bfs_dump dmp) {
 
         if (node)
             dmp(node->value, depth, idx);
-        if (linklist_insert(list, node ? node->left : NULL, (void *) (int) (depth+1), NULL))
+        if (linklist_insert(list, node ? node->left : NULL, (void *) (long int) (depth + 1), NULL))
             goto fail;
-        if (linklist_insert(list, node ? node->right : NULL, (void *) (int) (depth+1), NULL))
+        if (linklist_insert(list, node ? node->right : NULL, (void *) (long int) (depth + 1), NULL))
             goto fail;
-        if (idx + 1 == (long long int) pow(2, height+1))
-           break; 
+        if (idx + 1 == (long long int) pow(2, height + 1))
+            break;
         idx++;
     }
 
