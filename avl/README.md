@@ -13,7 +13,7 @@ make
 
 `./remove.py`
 
-* dynamic test data, depended array's permutations and combinations, from "0 0 0 0 0 0" to "6 6 6 6 6 6"
+* dynamic test data, depended array's permutations and combinations, from "0 0 0 0 0" to "5 5 5 5 5"
 
 `./avl 6`
 
