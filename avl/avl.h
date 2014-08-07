@@ -15,6 +15,7 @@ struct avl;
 
 /**
  * return value
+ *
  * 0: equal
  * -1: v1 < v2
  * 1: v1 > v2
@@ -36,7 +37,9 @@ int avl_search(struct avl *avl, void *value, compare cmp);
 
 /**
  * verify the legitimacy of the avl tree
+ *
  * return value
+ *
  * 0: suceess
  * -1: fail in node's height
  * -2: fail in node's parent point
@@ -45,6 +48,10 @@ int avl_search(struct avl *avl, void *value, compare cmp);
 int avl_verify(struct avl *avl, compare cmp);
 
 void avl_in_order(struct avl *avl, dump dmp);
+
+/**
+ * printf tree shape
+ */
 void avl_bfs_dump(struct avl *avl, dump dmp);
 
 #ifdef __cplusplus

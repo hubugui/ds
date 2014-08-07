@@ -17,14 +17,15 @@ static int _compare(void *v1, void *v2)
 static void _verify(struct avl *avl)
 {
     int rc = avl_verify(avl, _compare);
+
     if (rc == -1) {
-        printf("verify fail in node's height.\n");
+        printf("fail! in verify node's height.\n");
         exit(rc);
     } else if (rc == -2) {
-        printf("verify fail in node's parent point.\n");
+        printf("fail! in node's parent point.\n");
         exit(rc);
     } else if (rc == -3) {
-        printf("verify fail in node's value.\n");
+        printf("fail! in node's value.\n");
         exit(rc);
     }
 }
@@ -62,6 +63,8 @@ static int _arg(int argc, char **argv)
     }
     avl_bfs_dump(avl, _dump);
     _verify(avl);
+
+    printf("success!\n");
 fail:
     avl_delete(avl);
     return rc;
@@ -90,10 +93,12 @@ static int _array(int size)
                 goto fail;
             }
         }
-        printf("\n");
+        printf("pass\n");
         _verify(avl);
         avl_delete(avl);
     }
+
+    printf("success!\n");
 
     rc = 0;
 fail:

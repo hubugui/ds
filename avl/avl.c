@@ -6,17 +6,6 @@
 #include "avl.h"
 #include "linklist.h"
 
-struct avl_node {
-    struct avl_node *left, *right, *parent;
-    void *value;
-    int height;
-};
-
-struct avl {
-    struct avl_node *root;
-    unsigned int count;
-};
-
 #define MAX(a,b) \
     ({ __typeof__ (a) _a = (a); \
         __typeof__ (b) _b = (b); \
@@ -30,6 +19,19 @@ struct avl {
 #define SET_HEIGHT(n)       (n->height = HEIGHT(n))
 
 #define _avl_node_new() calloc(1, sizeof(struct avl_node))
+
+struct avl_node
+{
+    struct avl_node *left, *right, *parent;
+    void *value;
+    int height;
+};
+
+struct avl
+{
+    struct avl_node *root;
+    unsigned int count;
+};
 
 static void _avl_node_delete(struct avl_node *node)
 {
@@ -68,8 +70,8 @@ static struct avl_node *_node_search(struct avl *avl, void *value, struct avl_no
     int rc;
 
     for (node = avl->root, *parentp = &avl->root;
-            node != NULL;
-            node = **parentp) {
+        node != NULL;
+        node = **parentp) {
         if ((rc = cmp(value, node->value)) == 0)
             return node;
         *parentp = rc < 0 ? &node->left : &node->right;
@@ -149,8 +151,8 @@ int avl_insert(struct avl *avl, void *value, compare cmp)
     int rc;
 
     for (node = avl->root, parent = NULL, parentp = &avl->root;
-            node != NULL;
-            parent = node, node = (*parentp)) {
+        node != NULL;
+        parent = node, node = (*parentp)) {
         if ((rc = cmp(value, node->value)) == 0)
             return 0;
         parentp = rc < 0 ? &node->left : &node->right;

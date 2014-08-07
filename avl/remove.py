@@ -46,4 +46,4 @@ remove_foreach(array)
 # random array
 array = random_array(array)
 remove_foreach(array)
-print("#random array={%s}" % (array))
+# print("#random array={%s}" % (array))

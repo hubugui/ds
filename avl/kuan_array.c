@@ -4,14 +4,15 @@
 
 #include "kuan_array.h"
 
-struct kuan_array {
+struct kuan_array
+{
     size_t size;
     size_t *value;
     char first;
 };
 
-struct kuan_array * 
-kuan_array_new(size_t size) {
+struct kuan_array *kuan_array_new(size_t size)
+{
     struct kuan_array *ka = calloc(1, sizeof(struct kuan_array));
 
     if (ka) {
@@ -26,14 +27,15 @@ kuan_array_new(size_t size) {
     return ka;
 }
 
-void kuan_array_delete(struct kuan_array *ka) {
+void kuan_array_delete(struct kuan_array *ka)
+{
     free(ka->value);
     free(ka);
 }
 
-int
-kuan_array_next(struct kuan_array *ka, size_t *value) {
-    size_t i, j;
+int kuan_array_next(struct kuan_array *ka, size_t *value)
+{
+    size_t i;
 
     for (i = 0; i < ka->size; i++) {
         if (ka->first) {
@@ -49,8 +51,6 @@ kuan_array_next(struct kuan_array *ka, size_t *value) {
     if (i == ka->size)
         return -1;
 
-    for (j = 0; j < ka->size; j++) {
-        value[j] = ka->value[j];
-    }
+    memmove(value, ka->value, sizeof(size_t) * ka->size);
     return 0;
 }
