@@ -9,7 +9,7 @@ make
 
 # test
 
-* general case, fixed test data
+* general case, fixed test data. detail refer to `remove.py` and `test.c`
 
 `./remove.py`
 
