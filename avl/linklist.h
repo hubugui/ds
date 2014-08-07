@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /*
- * not thread safe
+ * non-thread safe
  */
 
 struct linklist;

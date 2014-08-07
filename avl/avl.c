@@ -57,6 +57,11 @@ int avl_height(struct avl *avl)
     return avl->root ? avl->root->height : 0;
 }
 
+unsigned int avl_count(struct avl *avl)
+{
+    return avl->count;
+}
+
 static struct avl_node *_node_search(struct avl *avl, void *value, struct avl_node ***parentp, compare cmp)
 {
     struct avl_node *node;
@@ -70,12 +75,6 @@ static struct avl_node *_node_search(struct avl *avl, void *value, struct avl_no
         *parentp = rc < 0 ? &node->left : &node->right;
     }
     return NULL;
-}
-
-int avl_search(struct avl *avl, void *value, compare cmp)
-{
-    struct avl_node **parentp = NULL;
-    return _node_search(avl, value, &parentp, cmp) ? 0 : -1;
 }
 
 static struct avl_node *_left_rotate(struct avl_node *node)
@@ -167,6 +166,13 @@ int avl_insert(struct avl *avl, void *value, compare cmp)
     return 0;
 }
 
+static void _swap_value(struct avl_node *node1, struct avl_node *node2)
+{
+    void *value = node1->value;
+    node1->value = node2->value;
+    node2->value = value;
+}
+
 static void _remove_rebalance(struct avl *avl, struct avl_node *node, compare cmp)
 {
     struct avl_node **parentp;
@@ -197,13 +203,6 @@ retry:
             goto retry;
         }
     }
-}
-
-static void _swap_value(struct avl_node *node1, struct avl_node *node2)
-{
-    void *value = node1->value;
-    node1->value = node2->value;
-    node2->value = value;
 }
 
 int avl_remove(struct avl *avl, void *value, compare cmp)
@@ -269,58 +268,104 @@ int avl_min(struct avl *avl, void **value)
     return -1;
 }
 
-static int _in_order_visit(struct avl_node *node, int (*visit)(struct avl_node *node))
+int avl_search(struct avl *avl, void *value, compare cmp)
+{
+    struct avl_node **parentp = NULL;
+    return _node_search(avl, value, &parentp, cmp) ? 0 : -1;
+}
+
+static int _in_order(struct avl_node *node, 
+                    int (*visit)(struct avl_node *node, void *userdata), 
+                    void *userdata)
 {
     if (node) {
         int rc;
 
-        if ((rc = _in_order_visit(node->left, visit)))
+        if ((rc = _in_order(node->left, visit, userdata)))
             return rc;
-        if ((rc = visit(node)))
+        if ((rc = visit(node, userdata)))
             return rc;
-        if ((_in_order_visit(node->right, visit)))
+        if ((_in_order(node->right, visit, userdata)))
             return rc;
     }
     return 0;
 }
 
-int _node_verify(struct avl_node *node)
+static int _node_verify(struct avl_node *node, void *userdata)
 {
+    compare cmp = (compare) userdata;
+
     if (ABS(DIFF_HEIGHT(node)) > 1)
         return -1;
-    if (node->parent) {
-        if (node == node->parent->left || node == node->parent->right)
-            return 0;
-        else
-            return -2;
-    }
+    if (node->parent)
+        return (node == node->parent->left || node == node->parent->right) 
+                ? 0 : -2;
+    if (node->left && cmp(node->left->value, node->value) > 0)
+        return -3;
+    if (node->right && cmp(node->value, node->right->value) > 0)
+        return -3;
     return 0;
 }
 
-int avl_verify(struct avl *avl)
+int avl_verify(struct avl *avl, compare cmp)
 {
-    return _in_order_visit(avl->root, _node_verify);
+    return _in_order(avl->root, _node_verify, cmp);
 }
 
-static void _in_order(struct avl_node *node, dump dmp)
+static int _node_dump(struct avl_node *node, void *userdata)
 {
-    if (node->left)
-        _in_order(node->left, dmp);
+    dump dmp = (dump) userdata;
     dmp(node->value);
-    if (node->right)
-        _in_order(node->right, dmp);
+    return 0;
 }
 
 void avl_in_order(struct avl *avl, dump dmp)
 {
-    _in_order(avl->root, dmp);
+    _in_order(avl->root, _node_dump, dmp);
 }
 
-void avl_bfs(struct avl *avl, bfs_dump dmp)
+static void _node_bfs_dump(void *value, 
+                            int depth, 
+                            int idx, 
+                            int height,
+                            dump dmp,
+                            int *pre_depth,
+                            int *pre_idx_line)
+{
+    int i, idx_line = idx - ((( int) pow(2, depth)) - 1);
+    int pow_unit = (int) pow(2, height - depth);
+    char *unit = "  ";
+
+    int left_unit = pow_unit - 1;
+    int node_unit = 2 * pow_unit - 1;
+
+    /* formatter */
+    if (depth == (*pre_depth)) {
+        for (i = 0; i < (idx_line - *pre_idx_line) * (1 + node_unit) - 1; i++) {
+           printf("%s", unit);
+        }
+    } else {
+        if (depth > 0)
+            printf("\n");
+        for (i = 0; i < left_unit; i++) {
+            printf("%s", unit);
+        }
+        for (i = 0; i < idx_line * (1+node_unit); i++) {
+            printf("%s", unit);
+        }
+    }
+    *pre_idx_line = idx_line;
+    *pre_depth = depth;
+
+    dmp(value);    
+}
+
+void avl_bfs_dump(struct avl *avl, dump dmp)
 {
     struct avl_node *node = avl->root;
     struct linklist *list;
-    long long int depth = 0, idx = 0, tmp = 0;
+    int depth = 0, idx = 0, tmp = 0;
+    int pre_depth = -1, pre_idx_line = -1;
     int height = avl_height(avl);
 
     if (!node)
@@ -332,19 +377,27 @@ void avl_bfs(struct avl *avl, bfs_dump dmp)
         goto fail;
 
     while (linklist_size(list) > 0) {
-        node = (struct avl_node *) linklist_remove_head(list, (void **) &depth, (void **) &tmp);
+        node = (struct avl_node *) linklist_remove_head(list, 
+                                                        (void **) &depth, 
+                                                        (void **) &tmp);
 
         if (node)
-            dmp(node->value, depth, idx);
-        if (linklist_insert(list, node ? node->left : NULL, (void *) (long int) (depth + 1), NULL))
+            _node_bfs_dump(node->value, depth, idx, 
+                            height,  
+                            dmp,
+                            &pre_depth, &pre_idx_line);
+        if (linklist_insert(list, node ? node->left : NULL, 
+                            (void *) (long int) (depth + 1), NULL))
             goto fail;
-        if (linklist_insert(list, node ? node->right : NULL, (void *) (long int) (depth + 1), NULL))
+        if (linklist_insert(list, node ? node->right : NULL, 
+                            (void *) (long int) (depth + 1), NULL))
             goto fail;
-        if (idx + 1 == (long long int) pow(2, height + 1))
+        if (idx + 1 == (int) pow(2, height + 1))
             break;
         idx++;
     }
 
+    printf("\n");
 fail:
     linklist_delete(list);
 }
