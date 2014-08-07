@@ -1,0 +1,23 @@
+avl
+==================
+
+# compile
+
+`
+make
+`
+
+# test
+
+* general case, fixed test data
+
+`./remove.py`
+
+* dynamic test data, depended array's permutations and combinations, from "0 0 0 0 0 0" to "6 6 6 6 6 6"
+
+`./avl 6`
+
+# QA
+
+* Q1. Why save substree height's difference instead of height in node?
+* A1. per node's height need to refresh when rotate, but difference forever equal -1, 0, 1.
