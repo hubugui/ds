@@ -17,6 +17,10 @@ make
 
 `./avl 6`
 
+# kuan_array.c
+
+array's permutations and combinations
+
 # QA
 
 * Q1. Why save substree height's difference instead of height in node?
