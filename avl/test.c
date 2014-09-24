@@ -84,16 +84,16 @@ static int _array(int size)
             goto fail;
         }
 
-        printf("%d>", ++count);
+        //printf("%d>", ++count);
 
         for (i = 0; i < size; i++) {
-            printf("%ld ", value[i]);
+            //printf("%ld ", value[i]);
             if (avl_insert(avl, (void *) (value[i]), _compare)) {
                 printf("avl_insert() fail\n");
                 goto fail;
             }
         }
-        printf("pass\n");
+        //printf("pass\n");
         _verify(avl);
         avl_delete(avl);
     }
