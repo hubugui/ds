@@ -3,7 +3,7 @@
 import sys
 
 def permutation(array, bi, cases):
-	if bi >= len(array):
+        if bi >= len(array):
 		return
 
 	# sub array
