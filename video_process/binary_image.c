@@ -17,5 +17,5 @@ void binary_image_i420(unsigned char *yuv, size_t width, size_t height, unsigned
     }
 
     /* UV */
-    memset(yuv + width * height, 0xff, width * (height > 1));
+    /* memset(yuv + width * height, 0xff, width * (height >> 1)); */
 }

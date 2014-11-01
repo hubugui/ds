@@ -4,16 +4,17 @@ DEL=rm -rf
 MK=mkdir
 OUT=objs
 RM=rmdir /s /q
-CFLAGS=-Wall -O3
+CFLAGS=-Wall -O3 -Werror
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
+LINK=-llibgsl.a
 TARGET=$(notdir $(CURDIR))
 LIBS=lib$(TARGET).a
 
 all: $(TARGET)
 
 $(TARGET): $(LIBS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LINK) 
 	-$(DEL) *.a
 
 $(LIBS): $(OBJS)
