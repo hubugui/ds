@@ -9,15 +9,24 @@
 #define YUV_I420_SIZE(w,h)  ((w >> 1) * height * 3)
 
 int main(int argc, char **argv) {
-    char *in = "test_612_816.yuv";
-    char out[0xff];
-    size_t width, height, htg[0xff+1];
+    char in[256] = "test_612_816.yuv";
+    char out[256] = "test_612_816_bw.yuv";
+    size_t width = 612, height = 816;
+    size_t  htg[256];
     unsigned char *in_yuv, threshold;
 
-    if (argc > 2)
-        in = argv[1];
-    sscanf(in, "test_%zu_%zu.yuv", &width, &height);
-    sprintf(out, "test_%zu_%zu_bw.yuv", width, height);
+    if (argc > 3) {
+        char *prefix = strstr(argv[1], ".yuv");
+        size_t len = prefix - argv[1];
+
+        memmove(in, argv[1], len);
+        in[len] = 0x00;
+        sprintf(out, "%s_bw.yuv", in);
+
+        strcpy(in, argv[1]);
+        width = atoi(argv[2]);
+        height = atoi(argv[3]);
+    }
 
     /* read i420 */
     in_yuv = file_read(in, YUV_I420_SIZE(width, height)); 
@@ -27,10 +36,11 @@ int main(int argc, char **argv) {
     }
 
     /* calc histogram */
-    histogram_planar(in_yuv, width, height, htg);
+    histogram_planar_yuv(in_yuv, width, height, htg);
 
-    /* overall threshold */
-    threshold = histogram_overall_threshold(htg);
+    /* OTSU threshold */
+    threshold = histogram_otsu_threshold(width, height, htg);
+    printf("histogram_otsu_threshold()=%d\n", threshold);
     binary_image_i420(in_yuv, width, height, threshold);
 
     /* black white image */

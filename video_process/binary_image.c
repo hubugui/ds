@@ -12,7 +12,7 @@ void binary_image_i420(unsigned char *yuv, size_t width, size_t height, unsigned
     for (i = 0; i < height; i++) {
         buffer = yuv + i * width;
         for (j = 0; j < width; j++) {
-            buffer[j] = buffer[j] < threshold ? 0 : 0xff;
+            buffer[j] = buffer[j] <= threshold ? 0 : 0xff;
         }
     }
 

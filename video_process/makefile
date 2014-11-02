@@ -17,7 +17,10 @@ LIBS=lib$(TARGET).a
 
 all: $(TARGET)
 
-$(TARGET): $(LIBS) test_histogram
+$(TARGET): $(LIBS) black_white test_histogram
+
+black_white:
+	$(CC) $(CFLAGS) histogram.c binary_image.c file_rw.c black_white.c -o black_white.out $(LINK)
 
 test_histogram:
 	$(CC) $(CFLAGS) histogram.c file_rw.c test_histogram.c -o test_histogram.out $(LINK)

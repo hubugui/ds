@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     }
 
     /* calc histogram */
-    histogram_planar(in_yuv, width, height, htg);
+    histogram_planar_yuv(in_yuv, width, height, htg);
     /* stdout for graph */
     for (i = 0; i < 0xff+1; i++) {
         printf("%d %zu\n", i, htg[i]);
