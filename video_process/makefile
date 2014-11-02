@@ -7,15 +7,20 @@ RM=rmdir /s /q
 CFLAGS=-Wall -O3 -Werror
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
-LINK=-llibgsl.a
+
+# GNU Scientific Lib
+# LINK=-lgsl -lgslcblas
+
+LINK=
 TARGET=$(notdir $(CURDIR))
 LIBS=lib$(TARGET).a
 
 all: $(TARGET)
 
-$(TARGET): $(LIBS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LINK) 
-	-$(DEL) *.a
+$(TARGET): $(LIBS) test_histogram
+
+test_histogram:
+	$(CC) $(CFLAGS) histogram.c file_rw.c test_histogram.c -o test_histogram.out $(LINK)
 
 $(LIBS): $(OBJS)
 	$(AR) -r $@ $^
