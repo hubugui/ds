@@ -11,7 +11,7 @@ output yuv file's histogram string to STDOUT, you can use GNU plotting utilities
 ## plotutils
 `sudo apt-get install plotutils`
 
-# useage
+# usage
 
-'make'
-'./test_histogram.out | graph -T X'
+`make`
+`./test_histogram.out | graph -T X`
