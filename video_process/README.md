@@ -1,26 +1,17 @@
 video process
 ============================
 
-test_histogram
-----------------------------
+# test_histogram
 
 output yuv file's histogram data to STDOUT, you can use GNU plotting utilities's graph to display them.
 
+## depend
+`sudo apt-get install ffmpeg plotutils`
 
-# depend
-
-# plotutils
-`sudo apt-get install plotutils`
-
-# ffmpeg
-`sudo apt-get install ffmpeg`
-
-## draw yuv
-
+### draw yuv
 `ffplay -video_size 612*816 test_612_816.yuv`
 
-
-# usage
+## usage
 `make`
 
 `./test_histogram.out | graph -T X`
