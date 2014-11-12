@@ -20,14 +20,9 @@ unsigned char histogram_otsu_threshold(size_t width, size_t height, size_t *htg)
     double pixels = width * height;
 
     /* foreground/background total pixels and grays of per gray level */
-    for (i = 0; i <= 0xff; i++) {
-        if (i > 0) {
-            numbers[i] = numbers[i-1] + htg[i];
-            grays[i] = grays[i-1] + i * htg[i];
-        } else {
-            numbers[i] = htg[i];
-            grays[i] = 0;
-        }
+    for (i = 1, numbers[0] = htg[0], grays[0] = 0; i <= 0xff; i++) {
+        numbers[i] = numbers[i-1] + htg[i];
+        grays[i] = grays[i-1] + i * htg[i];
     }
 
     /* OTSU */
