@@ -1,34 +1,29 @@
-#!/usr/bin/python
+#!/usr/idxn/python
 
 import sys
 
-def permutation(array, bi, cases):
-        if bi >= len(array):
+def permutation(array, idx, cases):
+	if idx >= len(array):
 		return
 
-	# sub array
-	permutation(array, bi+1, cases)
-
 	# plus sub cases
-	size = len(cases)
-	for i in range(0, size):
-		cases.append([array[bi]] + cases[i])
+	for case_idx in range(len(cases)):
+		cases.append(cases[case_idx] + [array[idx]])
 
 	# first item
-	cases.append([array[bi]])
+	cases.append([array[idx]])
 
-def go(array, cases):
-	permutation(array, 0, cases)
+	permutation(array, idx + 1, cases)
 
 if __name__ == "__main__":
-	size = 4
+	size = 3
 	if len(sys.argv) > 1:
 		size = int(sys.argv[1])
 	array = [x for x in range(1, size+1)]
 
 	idx = 1
 	cases = []
-	go(array, cases)
+	permutation(array, 0, cases)
 	for case in cases:
 		print("{}>{}".format(idx, case))
 		idx = idx + 1
