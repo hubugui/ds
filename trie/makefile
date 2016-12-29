@@ -5,7 +5,8 @@ MK=mkdir
 OUT=objs
 RM=rmdir /s /q
 CFLAGS=-Wall -O3
-SRCS=$(wildcard *.c)
+#SRCS=$(wildcard *.c)
+SRCS=$(trie.c)
 OBJS=$(SRCS:.c=.o)
 TARGET=$(notdir $(CURDIR))
 LIBS=lib$(TARGET).a
@@ -13,8 +14,8 @@ LIBS=lib$(TARGET).a
 all: $(TARGET)
 
 $(TARGET): $(LIBS)
-	$(CC) $(CFLAGS) -o $@ $^
-	-$(DEL) *.a
+	#$(CC) $(CFLAGS) -o $@ $^
+	#-$(DEL) *.a
 
 $(LIBS): $(OBJS)
 	$(AR) -r $@ $^

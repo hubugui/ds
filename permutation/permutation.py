@@ -1,4 +1,4 @@
-#!/usr/idxn/python
+#!/usr/bin/python
 
 import sys
 

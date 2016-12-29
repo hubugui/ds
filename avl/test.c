@@ -108,8 +108,15 @@ fail:
     return rc;
 }
 
+#include "../trie/trie.h"
+
 int main(int argc, char **argv)
 {
+    struct trie *trie = trie_new();
+
+    printf("trie=%p\n", trie);
+    trie_delete(trie);
+
     if (argc > 2)
         return _arg(argc, argv);
      else
